@@ -1,29 +1,59 @@
 package Test;
 
+import static com.mongodb.client.model.Filters.and;
+import static com.mongodb.client.model.Filters.eq;
+import static com.mongodb.client.model.Updates.*;
+
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 
 import org.bson.Document;
+import org.bson.types.ObjectId;
 
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientURI;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.UpdateOptions;
 
 public class MongoDB_Test {
-	private MongoClient mongoClient;
+	private MongoDatabase database;
 	
 	MongoDB_Test() {
 		MongoClientURI connectionString = new MongoClientURI("mongodb://201team:roadtrip@ds153015.mlab.com:53015/201roadtrip");
 		MongoClient mongoClient = new MongoClient(connectionString);
-		MongoDatabase database = mongoClient.getDatabase("201roadtrip");
+		database = mongoClient.getDatabase("201roadtrip");
 		System.out.println("Connected to database");
-		MongoCollection<Document> collection = database.getCollection("test");
-		Document doc = new Document("name", "MongoDB")
-                .append("type", "database")
-                .append("count", 1)
-                .append("versions", Arrays.asList("v3.2", "v3.0", "v2.6"))
-                .append("info", new Document("x", 203).append("y", 102));
+//		MongoCollection<Document> collection = database.getCollection("counter");
+//		Document doc = new Document("user_counter", "0")
+//                .append("itin_counter", "0");
+//                
+//		collection.insertOne(doc);
+		insertNewItin("zexia", "exampletrip", 500);
+	}
+	
+	public void insertNewUser(String name, String oauth) {
+		MongoCollection<Document> collection = database.getCollection("user");
+		Document doc = new Document("oauth", oauth).append("name", name)
+				.append("my_itineraries", Arrays.asList())
+				.append("shared_itineraries", Arrays.asList());
 		collection.insertOne(doc);
+	}
+	
+	public void insertNewItin(String owner_name, String name, int total_time) {
+		MongoCollection<Document> collection = database.getCollection("itinerary");
+		Document doc = new Document("owner_name", owner_name).append("name", name)
+				.append("shared_users", Arrays.asList())
+				.append("stops", Arrays.asList())
+				.append("lastModified", new Date())
+				.append("total_trip_time", total_time);
+		collection.insertOne(doc);
+		ObjectId oid = (ObjectId) collection.find(and(eq("owner_name", owner_name), eq("name", name))).first().get("_id");
+		MongoCollection<Document> collection2 = database.getCollection("user");
+		ArrayList<ObjectId> itins = (ArrayList<ObjectId>) collection2.find(eq("name", owner_name)).first().get("my_itineraries");
+		itins.add(oid);
+		collection2.updateOne(eq("name",owner_name), set("my_itineraries", Arrays.asList(itins)));
 	}
 	
 	public static void main(String [] args) {
