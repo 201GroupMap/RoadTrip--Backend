@@ -56,6 +56,22 @@ public class MongoDB_Test {
 		collection2.updateOne(eq("name",owner_name), set("my_itineraries", Arrays.asList(itins)));
 	}
 	
+	/**
+	 * @param name
+	 * @return my itineraries in an arraylist of document
+	 */
+	public ArrayList<Document> loadMyItineraries(String name) {
+		MongoCollection<Document> collection = database.getCollection("user");
+		MongoCollection<Document> collection2 = database.getCollection("itinerary");
+		ArrayList<ObjectId> itins = (ArrayList<ObjectId>) collection.find(eq("name", name)).first().get("my_itineraries");
+		ArrayList<Document> res = new ArrayList<Document>();
+		for(ObjectId oid: itins) {
+			Document doc = collection2.find(eq("_id", oid)).first();
+			res.add(doc);
+		}
+		return res;
+	}
+	
 	public static void main(String [] args) {
 		MongoDB_Test mytest = new MongoDB_Test();
 	}
